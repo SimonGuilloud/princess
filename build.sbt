@@ -83,17 +83,11 @@ lazy val smtParser = (project in file("smt-parser")).
   disablePlugins(AssemblyPlugin)
 
 
-def githubProject(repo: String, commitHash: String) = RootProject(uri(s"$repo#$commitHash"))
-
-lazy val sctptp = githubProject("https://github.com/SC-TPTP/sc-tptp.git", "47f02bd")
-
-
 // Actual project
 
 lazy val root = (project in file(".")).
   aggregate(parser, smtParser).
   dependsOn(parser, smtParser).
-  dependsOn(sctptp).
   settings(commonSettings: _*).
 //
   settings(

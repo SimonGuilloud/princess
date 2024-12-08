@@ -110,9 +110,9 @@ object CertificatePrettyPrinter {
       pn.toString
   }
 
-  private val LINE_WIDTH = 80
+  val LINE_WIDTH = 80
 
-  private val NUMERIC_LABEL = """\(([0-9]+)\)""".r
+  val NUMERIC_LABEL = """\(([0-9]+)\)""".r
 
 }
 

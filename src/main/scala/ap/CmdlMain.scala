@@ -312,7 +312,7 @@ object CmdlMain {
 
 
     if (Param.PRINT_SCTPTP(settings) != "")
-      printSCTPTPCertificate(cert, settings)
+      printSCTPTPCertificate(cert, settings, prover)
 
     if (Param.PRINT_DOT_CERTIFICATE_FILE(settings) != "")
       printDOTCertificate(cert, settings)
@@ -366,19 +366,29 @@ object CmdlMain {
   }
 
   private def printSCTPTPCertificate(cert : Certificate,
-                                  settings : GlobalSettings) = {
+                                  settings : GlobalSettings,
+                                  prover: Prover) = {
     Console.err.println()
-     
-    if (Param.PRINT_SCTPTP(settings) != "-") {
-      Console.err.println("Saving certificate in sctptp format to " +
-                          Param.PRINT_SCTPTP(settings) + " ...")
-      val out =
-        new java.io.FileOutputStream(Param.PRINT_SCTPTP(settings))
-      Console.withOut(out) { SCTPTPWriter(cert) }
-      out.close
-    } else {
-      SCTPTPWriter(cert)
+
+    prover match {
+      case prover : AbstractFileProver => {
+        if (Param.PRINT_SCTPTP(settings) != "-") {
+          Console.err.println("Saving certificate in sctptp format to " +
+                              Param.PRINT_SCTPTP(settings) + " ...")
+          val out =
+            new java.io.FileOutputStream(Param.PRINT_SCTPTP(settings))
+          Console.withOut(out) { 
+            SCTPTPWriter(cert, prover, Param.PRINT_SCTPTP(settings))
+          }
+          out.close
+        } else {
+          SCTPTPWriter(cert, prover, Param.PRINT_SCTPTP(settings))
+        }
+      }
+      case _ => // nothing
     }
+     
+    
   }
 
   private def printDOTCertificate(cert : Certificate,
