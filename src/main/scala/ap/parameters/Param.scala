@@ -141,6 +141,11 @@ object Param {
     type Value = Boolean
     val defau : Boolean = false
   }
+
+  case object PRINT_SCTPTP extends Param {
+    type Value = String
+    val defau : String = ""
+  }
   
   object ConstraintSimplifierOptions extends Enumeration {
     val None, Fair, Lemmas = Value

@@ -93,6 +93,8 @@ object GlobalSettings {
           Param.PRINT_TPTP_FILE.set(settings, value)
         case Opt("printProof", value) =>
           Param.PRINT_CERTIFICATE.set(settings, value)
+        case ValueOpt("printSCTPTP", value) =>
+          Param.PRINT_SCTPTP.set(settings, value)
         case ValueOpt("printDOT", value) =>
           Param.PRINT_DOT_CERTIFICATE_FILE.set(settings, value)
         case Opt("assert", value) =>
@@ -272,6 +274,7 @@ object GlobalSettings {
          Param.INCREMENTAL, Param.ASSERTIONS, Param.PRINT_TREE,
          Param.PRINT_SMT_FILE, Param.PRINT_TPTP_FILE,
          Param.PRINT_DOT_CERTIFICATE_FILE, Param.PRINT_CERTIFICATE,
+         Param.PRINT_SCTPTP,
          Param.SIMPLIFY_CONSTRAINTS, Param.TRACE_CONSTRAINT_SIMPLIFIER,
          Param.STRENGTHEN_TREE_FOR_SIDE_CONDITIONS,
          Param.MOST_GENERAL_CONSTRAINT, Param.MGC_FORMAT, Param.DNF_CONSTRAINTS,

@@ -220,6 +220,7 @@ abstract class AbstractFileProver(reader  : java.io.Reader,
       !rawInterpolantSpecs.isEmpty ||
       Param.COMPUTE_UNSAT_CORE(settings) ||
       Param.PRINT_CERTIFICATE(settings) ||
+      Param.PRINT_SCTPTP(settings) != "" ||
       Param.PRINT_DOT_CERTIFICATE_FILE(settings) != ""
   }
 

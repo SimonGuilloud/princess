@@ -35,7 +35,7 @@ package ap;
 
 import ap.proof.ConstraintSimplifier
 import ap.proof.tree.{ProofTree, QuantifiedTree}
-import ap.proof.certificates.{Certificate, DotLineariser,
+import ap.proof.certificates.{Certificate, DotLineariser, SCTPTPWriter,
                               DagCertificateConverter, CertificatePrettyPrinter,
                               CertFormula}
 import ap.terfor.preds.Predicate
@@ -310,6 +310,10 @@ object CmdlMain {
     if (Param.PRINT_CERTIFICATE(settings))
       printTextCertificate(cert, settings, prover)
 
+
+    if (Param.PRINT_SCTPTP(settings) != "")
+      printSCTPTPCertificate(cert, settings)
+
     if (Param.PRINT_DOT_CERTIFICATE_FILE(settings) != "")
       printDOTCertificate(cert, settings)
   }
@@ -359,6 +363,22 @@ object CmdlMain {
 
     if (format == Param.InputFormat.TPTP)
       println("% SZS output end Proof for theBenchmark")
+  }
+
+  private def printSCTPTPCertificate(cert : Certificate,
+                                  settings : GlobalSettings) = {
+    Console.err.println()
+     
+    if (Param.PRINT_SCTPTP(settings) != "-") {
+      Console.err.println("Saving certificate in sctptp format to " +
+                          Param.PRINT_SCTPTP(settings) + " ...")
+      val out =
+        new java.io.FileOutputStream(Param.PRINT_SCTPTP(settings))
+      Console.withOut(out) { SCTPTPWriter(cert) }
+      out.close
+    } else {
+      SCTPTPWriter(cert)
+    }
   }
 
   private def printDOTCertificate(cert : Certificate,
