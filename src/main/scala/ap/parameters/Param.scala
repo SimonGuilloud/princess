@@ -88,6 +88,11 @@ object Param {
     val defau : Boolean = false
   }
 
+  case object ORIGINAL_FILES extends Param {
+    type Value = Seq[String]
+    val defau : Seq[String] = Seq()
+  }
+
   case object QUIET extends Param {
     type Value = Boolean
     val defau : Boolean = false
@@ -531,5 +536,4 @@ abstract class Param {
   
   def set[A <: Settings[A]](settings : Settings[A], v : Value) : A =
     settings + (this, v)
-    
 }

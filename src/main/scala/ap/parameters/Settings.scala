@@ -253,7 +253,7 @@ object GlobalSettings {
           throw new UnknownArgumentException(arg)
         case _ => { inputs += arg; settings }
       }
-    
+    settings = Param.ORIGINAL_FILES.set(settings, inputs.toList)
     (settings, inputs)
   }
 
@@ -294,7 +294,7 @@ object GlobalSettings {
          Param.NONLINEAR_SPLITTING, Param.MUL_PROCEDURE, Param.ADT_MEASURE,
          Param.REAL_RAT_SATURATION_ROUNDS, Param.RANDOM_SEED,
          Param.PORTFOLIO_THREAD_NUM, Param.INLINE_SIZE_LIMIT,
-         Param.WARM_UP)
+         Param.WARM_UP, Param.ORIGINAL_FILES)
 
   val DEFAULT =
     new GlobalSettings (scala.collection.immutable.HashMap[Param, Any]())

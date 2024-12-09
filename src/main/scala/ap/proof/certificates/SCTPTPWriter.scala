@@ -10,36 +10,42 @@ import ap.parser.{PartName, TPTPLineariser, SMTLineariser, PrincessLineariser,
                   VariableSortInferenceVisitor, TPTPTParser}
 import ap.terfor.linearcombination.LinearCombination
 import ap.terfor.TermOrder
+import ap.parameters.{Param, GlobalSettings}
 
 import scala.collection.mutable.{HashMap => MHashMap, LinkedHashMap,
                                  ArrayStack}
 import scala.util.Sorting
 
-object SCTPTP {
-
-}
-
 
 object SCTPTPWriter {
   
-  def apply(cert : Certificate, prover: AbstractFileProver, filename: String) = {
+  def apply(cert : Certificate, prover: AbstractFileProver, filename: String, settings: GlobalSettings) = {
 
-    println("filename: " + filename)
-
-    if (filename endsWith ".p") {
-      val reader = new java.io.BufferedReader (new java.io.FileReader(new java.io.File (filename)))
-      // print content of file
-      var line = reader.readLine()  
-      while (line != null) {
-        println(line)
-        line = reader.readLine()
+    Param.ORIGINAL_FILES(settings) match {
+      case Seq(of) if of endsWith ".p" => {
+        val reader = new java.io.BufferedReader (new java.io.FileReader(new java.io.File (of)))
+        // print content of file
+        var line = reader.readLine()  
+        while (line != null) {
+          println(line)
+          line = reader.readLine()
+        }
       }
+      case _ => {
+        println("No original file found: " + Param.ORIGINAL_FILES(settings))
+        println("")
+        import IExpression._
+        //println("TPTPLineariser(prover.rawInputFormula, filename)\n")
+        //TPTPLineariser(prover.rawInputFormula, filename)
+        //println("\n\n\n\n\n\n")
       
+      }
     }
+
 
     // input
     {
-      import IExpression._
+      //import IExpression._
       //println("TPTPLineariser(prover.rawInputFormula, filename)\n")
       //TPTPLineariser(prover.rawInputFormula, filename)
       //println("\n\n\n\n\n\n")
@@ -58,19 +64,8 @@ object SCTPTPWriter {
 
     val printer = new SCTPTPPrettyPrinter(predTranslation)
 
-    println()
-    println("------------------")
-    println()
-    println("printer(dagCert, formulaParts)\n")
     printer(dagCert, prover)
 
-    //proof
-
-
-    cert.assumedFormulas.foreach { f =>
-      println("-__--__")
-      println(f)
-    }
   }
 
 
@@ -139,40 +134,62 @@ object SCTPTPWriter {
         name => assumedFormulas contains initialFormulas(name)
       }
 
-      println("Assumptions after simplification:")
-      println("---------------------------------")
+      println("% Assumptions after simplification:")
 
       push
       try {
         for (name <- usedNames) {
           println()
+
+          val f = initialFormulas(name)
           val label = name match {
-            case PartName.NO_NAME         => "input"
-            case PartName.FUNCTION_AXIOMS => "function-axioms"
-            case PartName.THEORY_AXIOMS   => "theory-axioms"
-            case _                        => formulaPrinter.partName2String(name)
+            case PartName.NO_NAME         => 
+              val label = "input"
+              introduceFormula(f, label)
+              label
+            case PartName.FUNCTION_AXIOMS => 
+              val label = "function-axioms"
+              println(s"tff($label, plain,")
+              printlnPrefBreaking("  ", formulaPrinter for2String f)
+              printlnPrefBreaking("  ", s"inference(functionAxioms, [], [])")
+              println(").")
+              formulaLabel.put(f, label)
+              label
+            case PartName.THEORY_AXIOMS   => 
+              val label = "theory-axioms"
+              introduceFormula(f, label)
+              label
+            case _                        => 
+              val prevlabel = formulaPrinter.partName2String(name)
+              val label = prevlabel + "_"
+              println(s"tff($label, plain,")
+              printlnPrefBreaking("  ", formulaPrinter for2String f)
+              printlnPrefBreaking("  ", s"inference(princessSimplification, [], [$prevlabel])")
+              println(s").")
+              formulaLabel.put(f, label)
           }
-          introduceFormula(initialFormulas(name), label)
-        }
-
-        if (!(unusedNames forall PartName.predefNamesSet)) {
-          println()
-          println("Further assumptions not needed in the proof:")
-          println("--------------------------------------------")
-          printlnPrefBreaking("",
-                              (unusedNames filterNot PartName.predefNamesSet)
-                                .map(formulaPrinter.partName2String _)
-                                .mkString(", "))
+          
+          // introduceFormula(initialFormulas(name), label)
         }
 
         println()
-        println("Those formulas are unsatisfiable:")
-        println("---------------------------------")
+        println("% Those formulas are unsatisfiable:")
+
+
+
+
+
+
+
+
+
+
+
 
         println()
-        println("Begin of proof")
-        addPrefix("| ")
-        printCertificate(dagCertificate.last)
+        println("% Begin of proof")
+        certificateToSCTPTP(dagCertificate.last)
+
         printlnPref
       } finally {
         reset
@@ -190,12 +207,12 @@ object SCTPTPWriter {
         push
         try {
           for (f <- cert.assumedFormulas)
-            introduceFormula(f)
+            introduceFormula(f, "unknownInference")
 
           println()
           println("Begin of proof")
           addPrefix("| ")
-          printCertificate(cert)
+          certificateToSCTPTP(cert)
           printlnPref
         } finally {
           reset
@@ -277,35 +294,32 @@ object SCTPTPWriter {
       }
     }
 
+
+    //////////////////////////////////////////////////////////////////////////////
+    
+
     //////////////////////////////////////////////////////////////////////////////
 
     private val formulaLabel = new LinkedHashMap[CertFormula, String]
     private var formulaCounter : Int = 1
 
-    private def introduceFormula(f : CertFormula, label : String = "") : Unit =
-      if (label == "") {
-        printlnPrefBreaking("  (" + formulaCounter + ")  ",
-                            formulaPrinter for2String f)
-        formulaLabel.put(f, "" + formulaCounter)
-        formulaCounter = formulaCounter + 1
-      } else {
-        printlnPref("  (" + label + ")")
-        printlnPrefBreaking("  ", formulaPrinter for2String f)
-        formulaLabel.put(f, label)
-        printPref
-      }
+    private def introduceFormula(f : CertFormula, inference: String, label : String = "") : Unit = {
+      println(s"tff(f$formulaCounter, plain, ${formulaPrinter for2String f}, $inference).")
+      formulaLabel.put(f, "" + formulaCounter)
+      formulaCounter = formulaCounter + 1
+    }
 
 
     private def introduceFormulaIfNeeded
                   (f : CertFormula, assumedFormulas : Set[CertFormula]) : Unit = {
       if (!(formulaLabel contains f) && (assumedFormulas contains f))
-        introduceFormula(f)
+        introduceFormula(f, "")
     }
 
     private def introduceFormulasIfNeeded
                   (fs : Iterable[CertFormula],
                    assumedFormulas : Set[CertFormula],
-                   order : TermOrder) : Unit = {
+                   order : TermOrder, inference: String) : Unit = {
       var neededFors = 
         (for (f <- fs.iterator;
               if (!(formulaLabel contains f) && (assumedFormulas contains f)))
@@ -318,10 +332,10 @@ object SCTPTPWriter {
         Sorting stableSort neededFors
       }
 
-      for (f <- neededFors) introduceFormula(f)
+      for (f <- neededFors) introduceFormula(f, inference)
     }
 
-    private def l(f : CertFormula) : String = "(" + formulaLabel(f) + ")"
+    private def l(f : CertFormula) : String = "f" + formulaLabel(f)
 
     private def l(fs : Iterable[CertFormula]) : String =
       ((fs.toSeq map (l(_))).sortBy {
@@ -352,7 +366,7 @@ object SCTPTPWriter {
 
     //////////////////////////////////////////////////////////////////////////////
 
-    private def printCertificate(cert : Certificate) : Unit = cert match {
+    private def certificateToSCTPTP(cert : Certificate) : Unit = cert match {
 
       case BranchInferenceCertificate(inferences, child, _) => {
         val assumptions =
@@ -361,9 +375,9 @@ object SCTPTPWriter {
         for ((inf, assumptions) <- inferences.iterator zip assumptions.iterator)
           printInference(inf, assumptions, child.order)
 
-        printCertificate(child)
+        certificateToSCTPTP(child)
       }
-
+/*
       case cert : BetaCertificate => {
         printlnPref
         printlnPref("BETA: splitting " +
@@ -416,6 +430,8 @@ object SCTPTPWriter {
                             " inconsistent by sub-proof #" +
                             (certificateNum - id - 1) + ".")
       }
+      */
+      case _ => println("remaining cert")
     }
 
     private def printCases(cert : Certificate) : Unit = {
@@ -429,8 +445,8 @@ object SCTPTPWriter {
           printlnPref
           introduceFormulasIfNeeded(cert localProvidedFormulas num,
                                     subCert.assumedFormulas,
-                                    subCert.order)
-          printCertificate(subCert)
+                                    subCert.order, "unknownInference")
+          certificateToSCTPTP(subCert)
           printlnPref
         } finally {
           pop
@@ -463,7 +479,7 @@ object SCTPTPWriter {
 
       printlnPref
 
-      inf match {
+      val inference: String = inf match {
         case _ : AlphaInference =>
           printRewritingRule("ALPHA", inf)
         case _ : ReducePredInference | _ : ReduceInference =>
@@ -485,14 +501,21 @@ object SCTPTPWriter {
         case inf : TheoryAxiomInference =>
           printRewritingRule("THEORY_AXIOM " + inf.theory, inf)
         case QuantifierInference(quantifiedFormula, newConstants, _, _) =>
-          printlnPrefBreaking("DELTA: ",
-                      "instantiating " +  l(quantifiedFormula) +
-                      " with fresh " +
-                      (if (newConstants.size > 1) "symbols" else "symbol") + " " +
-                      (newConstants mkString ", ") + " gives:")
+
+          s"inference(DELTA, [${newConstants mkString ", "}]," +
+            s"[${l(quantifiedFormula)}])"
+                      
         case GroundInstInference(quantifiedFormula, instanceTerms,
                                  _, dischargedAtoms, _, _) =>
-          printlnPrefBreaking("GROUND_INST: ",
+
+          val prems = (l(quantifiedFormula)) + (if (!dischargedAtoms.isEmpty)
+                          ", " + l(dischargedAtoms)
+                        else
+                          "")
+          val params = instanceTerms.reverse.map(formulaPrinter term2String) mkString ","
+          s"inference(GROUND_INST, [${instanceTerms mkString ", "}]," +
+            s"[$prems])"
+          /*printlnPrefBreaking("GROUND_INST: ",
                       "instantiating " +  l(quantifiedFormula) + " with " +
                       ((for (t <- instanceTerms.reverse)
                        yield (formulaPrinter term2String t)) mkString ", ") +
@@ -500,26 +523,22 @@ object SCTPTPWriter {
                          ", simplifying with " + l(dischargedAtoms)
                        else
                          "") +
-                      " gives:")
+                      " gives:")*/
         case ColumnReduceInference(_, newSymbol, definingEq, _, _) =>
-          printlnPrefBreaking("COL_REDUCE: ",
+          /*printlnPrefBreaking("COL_REDUCE: ",
                       "introducing fresh symbol " + newSymbol +
                       " defined by:")
+                      */
+          s"inference(ColumnReduceInference, [], [])"
       }
 
       introduceFormulasIfNeeded(inf.providedFormulas,
                                 nextAssumedFormulas,
-                                childOrder)
+                                childOrder, inference)
     }
 
-    private def printRewritingRule(name : String, inf : BranchInference) : Unit =
-      printlnPrefBreaking(name + ": ",
-                          l(inf.assumedFormulas) +
-                          (inf.assumedFormulas.size match {
-                            case 0 => ""
-                            case 1 => " implies:"
-                            case _ => " imply:"
-                           }))
+    private def printRewritingRule(name : String, inf : BranchInference) : String =
+      s"inference($name, [], [${l(inf.assumedFormulas)}])"
 
   }
 

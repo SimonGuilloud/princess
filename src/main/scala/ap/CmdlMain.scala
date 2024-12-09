@@ -307,8 +307,10 @@ object CmdlMain {
               "}")
     }
 
-    if (Param.PRINT_CERTIFICATE(settings))
+    if (Param.PRINT_CERTIFICATE(settings)) {
+      println("sdgsdfsed------------------------------f")
       printTextCertificate(cert, settings, prover)
+    }
 
 
     if (Param.PRINT_SCTPTP(settings) != "")
@@ -370,6 +372,8 @@ object CmdlMain {
                                   prover: Prover) = {
     Console.err.println()
 
+    //content of original file
+
     prover match {
       case prover : AbstractFileProver => {
         if (Param.PRINT_SCTPTP(settings) != "-") {
@@ -378,11 +382,11 @@ object CmdlMain {
           val out =
             new java.io.FileOutputStream(Param.PRINT_SCTPTP(settings))
           Console.withOut(out) { 
-            SCTPTPWriter(cert, prover, Param.PRINT_SCTPTP(settings))
+            SCTPTPWriter(cert, prover, Param.PRINT_SCTPTP(settings), settings)
           }
           out.close
         } else {
-          SCTPTPWriter(cert, prover, Param.PRINT_SCTPTP(settings))
+          SCTPTPWriter(cert, prover, Param.PRINT_SCTPTP(settings), settings)
         }
       }
       case _ => // nothing
