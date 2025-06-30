@@ -383,10 +383,21 @@ object CmdlMain {
             new java.io.FileOutputStream(Param.PRINT_SCTPTP(settings))
           Console.withOut(out) { 
             SCTPTPWriter(cert, prover, Param.PRINT_SCTPTP(settings), settings)
+            import ap.proof.certificates.SCTPTP
+            val proof = SCTPTP.cert2Proof(cert, prover)
+            implicit val printer = new CertificatePrettyPrinter.TPTPFormulaPrinter (
+              prover.getPredTranslation, false)
+            println("\n\n% SCTPTP proof:\n\n")
+            println(SCTPTP.prettyProof(proof))
           }
           out.close
         } else {
           SCTPTPWriter(cert, prover, Param.PRINT_SCTPTP(settings), settings)
+          import ap.proof.certificates.SCTPTP
+          val proof = SCTPTP.cert2Proof(cert, prover)
+          implicit val printer = new CertificatePrettyPrinter.TPTPFormulaPrinter (
+            prover.getPredTranslation, false)
+          println(SCTPTP.prettyProof(proof))
         }
       }
       case _ => // nothing

@@ -75,9 +75,10 @@ object CertificatePrettyPrinter {
 
   }
 
-  class TPTPFormulaPrinter(predTranslation : Map[Predicate, IFunction])
+  class TPTPFormulaPrinter(predTranslation : Map[Predicate, IFunction], tff: Boolean = true)
         extends FormulaPrinter(predTranslation) {
-    private val lin = new TPTPLineariser("")
+    private val lin = new TPTPLineariser("", tff)
+    println("tff: " + tff)
 
     def for2String(f : CertFormula) : String = DialogUtil.asString {
       lin printFormula translate(f)

@@ -62,7 +62,7 @@ object TPTPLineariser {
 /**
  * Class for printing <code>IFormula</code>s in the TPTP format
  */
-class TPTPLineariser(benchmarkName : String) {
+class TPTPLineariser(benchmarkName : String, tff:Boolean = true) {
 
   //////////////////////////////////////////////////////////////////////////////
 
@@ -443,7 +443,11 @@ class TPTPLineariser(benchmarkName : String) {
             case Quantifier.ALL => " !"
             case Quantifier.EX => " ?"
           })
-          print(" [" + varName + ": " + sort + "] : ")
+          if (tff)
+            print(" [" + varName + ": " + sort + "] : ")
+          else
+            print(" [" + varName + "] : ")
+
           noParentOp(ctxt pushVar varName)
         }
         case INamedPart(_, f) => {
